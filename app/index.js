@@ -2,13 +2,6 @@ const client = require('discord-rich-presence')("1075433460275101696");
 require('dotenv').config();
 const Client = require('42.js').Client
 
-const supported_coalitions = [
-	"42cursus-paris-the-order",
-	"42cursus-paris-the-alliance",
-	"42cursus-paris-the-assembly",
-	"42cursus-paris-the-federation",
-];
-
 function updatePresence(login, lvl, location, campus, coalition_logo_key, startedAt) {
 	let params = {
 		largeImageKey: "rp42-icon",
@@ -17,11 +10,11 @@ function updatePresence(login, lvl, location, campus, coalition_logo_key, starte
 		startTimestamp: startedAt,
 		instance: true,
 	}
-	if (supported_coalitions.includes(coalition_logo_key)) {
-		params.smallImageKey = coalition_logo_key;
-	} else {
+	const r = new Request("https://github.com/error7404/RP42.js/raw/main/assets/" + coalition_logo_key);
+	if (r.status == 200)
+		params.smallImageKey = "https://github.com/error7404/RP42.js/raw/main/assets/" + coalition_logo_key;
+	else
 		console.log(`Unsupported coalition: ${coalition_logo_key}`);
-	}
 	client.updatePresence(params);
 }
 
@@ -37,13 +30,14 @@ process.title = "RP42";
 	);
 	const login = process.env.USER;
 	if (!login) {
-		console.error("No user specified");
-		return;
+		console.error("Please set USER environment variable in .env file");
+		process.exit(1);
 	}
+
 	const user = await api_client.users.get(login);
 	if (!user) {
-		console.error("User not found");
-		return;
+		console.error("User not found, please check your .env file");
+		process.exit(1);
 	}
 
 	let location = "";
