@@ -10,9 +10,9 @@ function updatePresence(login, lvl, location, campus, coalition_logo_key, starte
 		startTimestamp: startedAt,
 		instance: true,
 	}
-	const r = new Request("https://github.com/error7404/RP42.js/raw/main/assets/" + coalition_logo_key);
-	if (r.status == 200)
-		params.smallImageKey = "https://github.com/error7404/RP42.js/raw/main/assets/" + coalition_logo_key;
+	const r = new Request("https://github.com/error7404/RP42.js/raw/main/assets/" + coalition_logo_key + ".png");
+	if (r.status != 404)
+		params.smallImageKey = "https://github.com/error7404/RP42.js/raw/main/assets/" + coalition_logo_key + ".png";
 	else
 		console.log(`Unsupported coalition: ${coalition_logo_key}`);
 	client.updatePresence(params);
