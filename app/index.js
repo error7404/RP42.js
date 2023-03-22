@@ -1,21 +1,49 @@
-const client = require('discord-rich-presence')("1075433460275101696");
+const fs = require('fs');
+const client = require('discord-rich-presence');
 require('dotenv').config();
 const Client = require('42.js').Client
 
-function updatePresence(login, lvl, location, campus, coalition_logo_key, startedAt) {
+async function updatePresence(login, lvl, location, campus, coalition_logo_key, coalition_name, startedAt, project) {
+	if (project.length > 128){
+		project = project.slice(0, 125);
+		project += "...";
+	}
 	let params = {
 		largeImageKey: "rp42-icon",
+		largeImageText: `${location} in ${campus}`,
 		details: `${login} | Lvl ${lvl}%`,
-		state: `${location} in ${campus}`,
+		state: project,
 		startTimestamp: startedAt,
 		instance: true,
 	}
-	const r = new Request("https://github.com/error7404/RP42.js/raw/main/assets/" + coalition_logo_key + ".png");
-	if (r.status != 404)
-		params.smallImageKey = "https://github.com/error7404/RP42.js/raw/main/assets/" + coalition_logo_key + ".png";
+	let r;
+	r = await fetch("https://github.com/error7404/RP42.js/raw/main/assets/" + campus + ".png")
+	if (r.ok)
+		params.largeImageKey = "https://github.com/error7404/RP42.js/raw/main/assets/" + campus + ".png";
 	else
-		console.log(`Unsupported coalition: ${coalition_logo_key}`);
-	client.updatePresence(params);
+		console.log(`Unsupported campus image: ${campus} (please make a pull request to add it)`);
+	r = await fetch("https://github.com/error7404/RP42.js/raw/main/assets/" + coalition_logo_key + ".png");
+	if (r.ok)
+	{
+		params.smallImageKey = "https://github.com/error7404/RP42.js/raw/main/assets/" + coalition_logo_key + ".png";
+		params.smallImageText = coalition_name;
+	}
+	else
+		console.log(`Unsupported coalition: ${coalition_logo_key} (please make a pull request to add it)`);
+	try {
+		campusRP = JSON.parse(fs.readFileSync("../assets/campusRP.json", "utf8"));
+		if (campusRP[campus])
+			client(campusRP[campus]).updatePresence(params);
+		else
+		{
+			console.log(`Unsupported campus RP: ${campus} (please create a discord application and add it to assets/campusRP.json)`);
+			client(campusRP["Default"]).updatePresence(params);
+		}
+	} catch (error) {
+		if (error.code === "ENOENT")
+			console.error("No campusRP.json file found in assets folder");
+		client("1075433460275101696").updatePresence(params);
+	}
 }
 
 process.title = "RP42";
@@ -67,13 +95,31 @@ process.title = "RP42";
 	}
 
 	let coalition_slug = "";
+	let coalition_name = "";
 	let coalitions = (await api_client.get(`/users/${user.id}/coalitions_users`)).data;
 	if (coalitions.length > 0) {
 		coalitions = coalitions.sort((a, b) => a.updated_at - b.updated_at);
 		const coalition = (await api_client.get(`/coalitions/${coalitions[0].coalition_id}`)).data;
 		coalition_slug = coalition.slug;
+		coalition_name = coalition.name;
+	}
+
+	// FIXME: 42 API is bad with filter, and Making less requests is better
+	let project = "Working on nothing";
+	let projects = (await api_client.get(`/users/${user.id}/projects_users?filter[status]=waiting_for_correction`)).data;
+	if (projects.length > 0)
+		project = "Waiting for correction: ";
+	else if ((projects = (await api_client.get(`/users/${user.id}/projects_users?filter[status]=in_progress`)).data).length > 0)
+		project = "Working on: ";
+	else if ((projects = (await api_client.get(`/users/${user.id}/projects_users?filter[status]=searching_a_group,creating_group`)).data).length > 0)
+		project = "Looking for a group: ";
+	if (projects.length > 0) {
+		let name = [];
+		for (let i = 0; i < projects.length; i++)
+			name.push(projects[i].project.name);
+		project += name.join(", ");
 	}
 	
-	console.log(`Logged in as ${login} | Lvl ${level}% | ${location} in ${campusName} | ${coalition_slug}`);
-	updatePresence(login, level, location, campusName, coalition_slug, startedAt);
+	console.log(`Logged in as ${login} | Lvl ${level}% | ${location} in ${campusName} | ${coalition_name} | ${project}`);
+	updatePresence(login, level, location, campusName, coalition_slug, coalition_name, startedAt, project);
 })();
