@@ -31,7 +31,7 @@ async function updatePresence(login, lvl, location, campus, coalition_logo_key, 
 	else
 		console.log(`Unsupported coalition: ${coalition_logo_key} (please make a pull request to add it)`);
 	try {
-		campusRP = JSON.parse(fs.readFileSync("../assets/campusRP.json", "utf8"));
+		campusRP = JSON.parse(fs.readFileSync(__dirname + "/../assets/campusRP.json", "utf8"));
 		if (campusRP[campus])
 			client(campusRP[campus]).updatePresence(params);
 		else
