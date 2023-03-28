@@ -16,12 +16,24 @@ async function updatePresence(login, lvl, location, campus, coalition_logo_key, 
 		startTimestamp: startedAt,
 		instance: true,
 	}
+	params = await setCampusImage(params, campus);
+	params = await setCoalitionImage(params, coalition_logo_key, coalition_name);
+	setPresenceName(params);
+}
+
+async function setCampusImage(params, campus) {
 	let r;
+
 	r = await fetch("https://github.com/error7404/RP42.js/raw/main/assets/" + campus + ".png")
 	if (r.ok)
 		params.largeImageKey = "https://github.com/error7404/RP42.js/raw/main/assets/" + campus + ".png";
 	else
 		console.log(`Unsupported campus image: ${campus} (please make a pull request to add it)`);
+	return params;
+}
+
+async function setCoalitionImage(params, coalition_logo_key, coalition_name) {
+	let r;
 	r = await fetch("https://github.com/error7404/RP42.js/raw/main/assets/" + coalition_logo_key + ".png");
 	if (r.ok)
 	{
@@ -30,18 +42,24 @@ async function updatePresence(login, lvl, location, campus, coalition_logo_key, 
 	}
 	else
 		console.log(`Unsupported coalition: ${coalition_logo_key} (please make a pull request to add it)`);
+	return params;
+}
+
+function setPresenceName(params) {
+	let campusRP = {};
+
 	try {
-		campusRP = JSON.parse(fs.readFileSync(__dirname + "/../assets/campusRP.json", "utf8"));
+		campusRP = JSON.parse(fs.readFileSync(__dirname + "/campusRP.json", "utf8"));
 		if (campusRP[campus])
 			client(campusRP[campus]).updatePresence(params);
 		else
 		{
-			console.log(`Unsupported campus RP: ${campus} (please create a discord application and add it to assets/campusRP.json)`);
+			console.log(`Unsupported campus RP: ${campus} (please create a discord application and add it to campusRP.json)`);
 			client(campusRP["Default"]).updatePresence(params);
 		}
 	} catch (error) {
 		if (error.code === "ENOENT")
-			console.error("No campusRP.json file found in assets folder");
+			console.error("No campusRP.json file found");
 		client("1075433460275101696").updatePresence(params);
 	}
 }
