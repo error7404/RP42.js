@@ -97,6 +97,5 @@ process.title = "RP42";
 
 	location = await location;
 	coalition = await coalition;
-	await updatePresence(login, await level, location.location, await campusName, coalition.coalition_slug, coalition.coalition_name, location.startedAt, await project);
-	process.exit(0);
+	updatePresence(login, await level, location.location, await campusName, coalition.coalition_slug, coalition.coalition_name, location.startedAt, await project);
 })();
