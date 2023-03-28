@@ -4,25 +4,38 @@ require('dotenv').config();
 const Client = require('42.js').Client
 const getAttr = require('./getAttr.js');
 
-async function updatePresence(login, lvl, location, campus, coalition_logo_key, coalition_name, startedAt, project) {
-	console.log(`Logged in as ${login} | Lvl ${lvl}% | ${location} in ${campus} since ${startedAt} | ${coalition_name} | ${project}`);
-	if (project.length > 128){
-		project = project.slice(0, 125);
-		project += "...";
+function sleep(ms) {
+	return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function updatePresence(login, lvl, largeImageText, state, campus, coalition_logo_key, coalition_name, startedAt) {
+	if (state.length > 128){
+		state = state.slice(0, 125);
+		state += "...";
+	}
+	if (largeImageText.length > 128){
+		largeImageText = largeImageText.slice(0, 125);
+		largeImageText += "...";
 	}
 	let params = {
 		largeImageKey: "rp42-icon",
-		largeImageText: `${location} in ${campus}`,
+		largeImageText: largeImageText,
 		details: `${login} | Lvl ${lvl}%`,
-		state: project,
+		state: state,
 		startTimestamp: startedAt,
 		instance: true,
 	}
 	params = await setCampusImage(params, campus);
 	params = await setCoalitionImage(params, coalition_logo_key, coalition_name);
-	setPresenceName(params);
+	setPresenceName(params, campus);
 }
 
+/**
+ * Search for the campus image on github and set it as largeImageKey
+ * @param params the presence params
+ * @param campus the campus name
+ * @returns the presence params with the largeImageKey set
+ */
 async function setCampusImage(params, campus) {
 	let r;
 
@@ -34,6 +47,13 @@ async function setCampusImage(params, campus) {
 	return params;
 }
 
+/**
+ * Search for the coalition image on github and set it as smallImageKey
+ * @param params the presence params
+ * @param coalition_logo_key the coalition logo key
+ * @param coalition_name the coalition name
+ * @returns the presence params with the smallImageKey set
+ */
 async function setCoalitionImage(params, coalition_logo_key, coalition_name) {
 	let r;
 
@@ -48,7 +68,12 @@ async function setCoalitionImage(params, coalition_logo_key, coalition_name) {
 	return params;
 }
 
-function setPresenceName(params) {
+/**
+ * Set the presence name to the one of the campus by reading campusRP.json
+ * @param params the presence params
+ * @param campus the campus name
+ */
+function setPresenceName(params, campus) {
 	let campusRP = {};
 
 	try {
@@ -97,5 +122,19 @@ process.title = "RP42";
 
 	location = await location;
 	coalition = await coalition;
-	updatePresence(login, await level, location.location, await campusName, coalition.coalition_slug, coalition.coalition_name, location.startedAt, await project);
+	level = await level;
+	campusName = await campusName;
+	project = await project;
+	location.location = `${location.location} in ${campusName}`;
+	console.log(`Logged in as ${login} | Lvl ${level}% | ${location.location} since ${location.startedAt} | ${coalition.coalition_name} | ${project}`);
+	while (!0) {
+		updatePresence(login, level, location.location, project, campusName,
+				coalition.coalition_slug, coalition.coalition_name,
+				location.startedAt);
+		await sleep(30000);
+		updatePresence(login, level, project, location.location, campusName,
+				coalition.coalition_slug, coalition.coalition_name,
+				location.startedAt);
+		await sleep(30000);
+	}
 })();
