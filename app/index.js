@@ -43,7 +43,7 @@ async function setCampusImage(params, campus) {
 	if (r.ok)
 		params.largeImageKey = "https://github.com/error7404/RP42.js/raw/main/assets/" + campus + ".png";
 	else
-		console.log(`Unsupported campus image: ${campus} (please make a pull request to add it)`);
+		console.error(`Unsupported campus image: ${campus} (please make a pull request to add it)`);
 	return params;
 }
 
@@ -64,7 +64,7 @@ async function setCoalitionImage(params, coalition_logo_key, coalition_name) {
 		params.smallImageText = coalition_name;
 	}
 	else
-		console.log(`Unsupported coalition: ${coalition_logo_key} (please make a pull request to add it)`);
+		console.error(`Unsupported coalition: ${coalition_logo_key} (please make a pull request to add it)`);
 	return params;
 }
 
@@ -82,7 +82,7 @@ function setPresenceName(params, campus) {
 			client(campusRP[campus]).updatePresence(params);
 		else
 		{
-			console.log(`Unsupported campus RP: ${campus} (please create a discord application and add it to campusRP.json)`);
+			console.error(`Unsupported campus RP: ${campus} (please create a discord application and add it to campusRP.json)`);
 			client(campusRP["Default"]).updatePresence(params);
 		}
 	} catch (error) {
