@@ -110,7 +110,7 @@ process.title = "RP42";
 
 	const user = await api_client.users.get(login);
 	if (!user) {
-		console.error("User not found, please check your .env file");
+		console.error(`User: ${process.env.USER} not found, please check your .env file or unset USER environment variable`);
 		process.exit(1);
 	}
 
