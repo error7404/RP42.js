@@ -126,7 +126,7 @@ process.title = "RP42";
 	campusName = await campusName;
 	project = await project;
 	location.location = `${location.location} in ${campusName}`;
-	console.log(`Logged in as ${login} | Lvl ${level}% | ${location.location} since ${location.startedAt} | ${coalition.coalition_name} | ${project}`);
+	console.log(`Logged in as ${login} | Lvl ${level}% | ${location.location} | ${coalition.coalition_name} | ${project}`);
 	while (!0) {
 		updatePresence(login, level, location.location, project, campusName,
 				coalition.coalition_slug, coalition.coalition_name,
