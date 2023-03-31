@@ -71,5 +71,14 @@ async function getProject(api_client, user) {
 			name.push(projects[i].project.name);
 		project += name.join(", ");
 	}
+	else {
+		try {
+			projects = (await api_client.get(`/users/${user.id}/projects_users?filter[status]=finished`)).data;
+			project = "Just pushed: " + projects[0].project.name;
+		}
+		catch (err) {
+			console.log(err);
+		}
+	}
 	return (project);
 }
