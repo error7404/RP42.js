@@ -1,5 +1,5 @@
 const fs = require('fs');
-const client = require('discord-rich-presence');
+const createClient = require('discord-rich-presence');
 require('dotenv').config();
 const Client = require('42.js').Client
 const getAttr = require('./getAttr.js');
@@ -8,7 +8,7 @@ function sleep(ms) {
 	return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function updatePresence(login, lvl, largeImageText, state, campus, coalition_logo_key, coalition_name, startedAt) {
+async function updatePresence(client, login, lvl, largeImageText, state, campus, coalition_logo_key, coalition_name, startedAt) {
 	if (state.length > 128){
 		state = state.slice(0, 125);
 		state += "...";
@@ -27,7 +27,7 @@ async function updatePresence(login, lvl, largeImageText, state, campus, coaliti
 	}
 	params = await setCampusImage(params, campus);
 	params = await setCoalitionImage(params, coalition_logo_key, coalition_name);
-	setPresenceName(params, campus);
+	client.updatePresence(params);
 }
 
 /**
@@ -69,26 +69,28 @@ async function setCoalitionImage(params, coalition_logo_key, coalition_name) {
 }
 
 /**
- * Set the presence name to the one of the campus by reading campusRP.json
- * @param params the presence params
- * @param campus the campus name
+ * Get the discord client from the campus name in campusRP.json
+ * @param {String} campus: the campus name
+ * @returns: the discord client
  */
-function setPresenceName(params, campus) {
+function getClient(campus) {
 	let campusRP = {};
 
 	try {
 		campusRP = JSON.parse(fs.readFileSync(__dirname + "/campusRP.json", "utf8"));
 		if (campusRP[campus])
-			client(campusRP[campus]).updatePresence(params);
+			return createClient(campusRP[campus]);
 		else
 		{
 			console.error(`Unsupported campus RP: ${campus} (please create a discord application and add it to campusRP.json)`);
-			client(campusRP["Default"]).updatePresence(params);
+			return createClient(campusRP["Default"]);
 		}
-	} catch (error) {
+	}
+	catch (error) {
+		throw error;
 		if (error.code === "ENOENT")
 			console.error("No campusRP.json file found");
-		client("1075433460275101696").updatePresence(params);
+		return createClient("1075433460275101696");
 	}
 }
 
@@ -127,12 +129,13 @@ process.title = "RP42";
 	project = await project;
 	location.location = `${location.location} in ${campusName}`;
 	console.log(`Logged in as ${login} | Lvl ${level}% | ${location.location} | ${coalition.coalition_name} | ${project}`);
+	const client = getClient(campusName);
 	while (!0) {
-		updatePresence(login, level, location.location, project, campusName,
+		updatePresence(client, login, level, location.location, project, campusName,
 				coalition.coalition_slug, coalition.coalition_name,
 				location.startedAt);
 		await sleep(30000);
-		updatePresence(login, level, project, location.location, campusName,
+		updatePresence(client, login, level, project, location.location, campusName,
 				coalition.coalition_slug, coalition.coalition_name,
 				location.startedAt);
 		await sleep(30000);
