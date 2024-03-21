@@ -87,7 +87,6 @@ function getClient(campus) {
 		}
 	}
 	catch (error) {
-		throw error;
 		if (error.code === "ENOENT")
 			console.error("No campusRP.json file found");
 		return createClient("1075433460275101696");

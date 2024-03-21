@@ -58,27 +58,30 @@ async function getProject(api_client, user) {
 	let project = "Working on nothing";
 	
 	// FIXME: 42 API is bad with filter, and Making less requests is better
-	let projects = (await api_client.get(`/users/${user.id}/projects_users?filter[status]=waiting_for_correction`)).data;
-	if (projects.length > 0)
+	let projects;
+	if ((projects = (await api_client.get(`/users/${user.id}/projects_users?filter[status]=waiting_for_correction`)).data).length)
 		project = "Waiting for correction: ";
-	else if ((projects = (await api_client.get(`/users/${user.id}/projects_users?filter[status]=in_progress`)).data).length > 0)
+	else if ((projects = (await api_client.get(`/users/${user.id}/projects_users?filter[status]=in_progress`)).data).length)
 		project = "Working on: ";
-	else if ((projects = (await api_client.get(`/users/${user.id}/projects_users?filter[status]=searching_a_group,creating_group`)).data).length > 0)
+	else if ((projects = (await api_client.get(`/users/${user.id}/projects_users?filter[status]=searching_a_group,creating_group`)).data).length)
 		project = "Looking for a group: ";
-	if (projects.length > 0) {
+	if (projects.length) {
 		let name = [];
 		for (let i = 0; i < projects.length; i++)
-			name.push(projects[i].project.name);
-		project += name.join(", ");
+			if (projects[i].status != "finished") // because 42 api filter is bad
+				name.push(projects[i].project.name);
+		if (name.length)
+		{
+			project += name.join(", ");
+			return (project);
+		}
 	}
-	else {
-		try {
-			projects = (await api_client.get(`/users/${user.id}/projects_users?filter[status]=finished`)).data;
-			project = "Just pushed: " + projects[0].project.name;
-		}
-		catch (err) {
-			console.log(err);
-		}
+	try {
+		projects = (await api_client.get(`/users/${user.id}/projects_users?filter[status]=finished`)).data;
+		project = "Just pushed: " + projects[0].project.name;
+	}
+	catch (err) {
+		console.log(err);
 	}
 	return (project);
 }
