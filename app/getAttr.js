@@ -25,7 +25,7 @@ function getCampus(user) {
 }
 
 function getLevel(user) {
-	return (user.cursus_users[0] ? user.cursus_users[0].level.toFixed(2) : 0);
+	return (user.cursus_users[user.cursus_users.length - 1] ? user.cursus_users[user.cursus_users.length - 1].level.toFixed(2) : 0);
 }
 
 async function getCoalition(api_client, user) {
