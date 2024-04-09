@@ -103,29 +103,29 @@ process.title = "RP42";
 			activeDebug: false,
 		}
 	);
-	const login = process.env.USER;
-	if (!login) {
-		console.error("Please set USER environment variable in .env file");
+	let login = process.env.LOGIN;
+	if (!login)
+		login = process.env.USER;
+	if (!login || login === "" || login === "your_login") {
+		console.error("Please set LOGIN environment variable in .env file");
 		process.exit(1);
 	}
 
 	const user = await api_client.users.get(login);
 	if (!user) {
-		console.error(`User: ${process.env.USER} not found, please check your .env file or unset USER environment variable`);
+		console.error(`User: ${login} not found, please check your .env file, add LOGIN variable and try again.`);
 		process.exit(1);
 	}
 
 	let location = getAttr.getLocation(api_client, user);
-	let campusName = getAttr.getCampus(api_client, user);
-	let level = getAttr.getLevel(api_client, user);
 	let coalition = getAttr.getCoalition(api_client, user);
-	let project = getAttr.getProject(api_client, user);
+	let campusName = getAttr.getCampus(user);
+	let level = getAttr.getLevel(user);
+	let project = getAttr.getProject(user);
 
+	// await here for parallel execution
 	location = await location;
 	coalition = await coalition;
-	level = await level;
-	campusName = await campusName;
-	project = await project;
 	location.location = `${location.location} in ${campusName}`;
 	console.log(`Logged in as ${login} | Lvl ${level}% | ${location.location} | ${coalition.coalition_name} | ${project}`);
 	const client = getClient(campusName);

@@ -20,25 +20,12 @@ async function getLocation(api_client, user) {
 	return (ret);
 }
 
-async function getCampus(api_client, user) {
-	let campusName = "The World";
-
-	const campuses = (await api_client.get(`/users/${user.id}/campus_users?filter[is_primary]=true`)).data;
-	if (campuses.length > 0) {
-		const campus = (await api_client.get(`/campus/${campuses[0].campus_id}`)).data;
-		campusName = campus.name;
-	}
-	return (campusName);
+function getCampus(user) {
+	return user.campus[0] ? user.campus[0].name : "The World";
 }
 
-async function getLevel(api_client, user) {
-	let level = 0;
-
-	const cursuses = (await api_client.get(`/users/${user.id}/cursus_users?filter[active]=true`)).data;
-	if (cursuses.length > 0) {
-		level = cursuses[0].level.toFixed(2);
-	}
-	return (level);
+function getLevel(user) {
+	return (user.cursus_users[0] ? user.cursus_users[0].level.toFixed(2) : 0);
 }
 
 async function getCoalition(api_client, user) {
@@ -54,34 +41,56 @@ async function getCoalition(api_client, user) {
 	return (ret);
 }
 
-async function getProject(api_client, user) {
+function filterProjects(user) {
+	let projects = user.projects_users;
+	
+	const finished = projects.filter(project => project.status === "finished");
+	const in_progress = projects.filter(project => project.status === "in_progress");
+	const waiting_for_correction = projects.filter(project => project.status === "waiting_for_correction");
+	const searching_a_group = projects.filter(project => project.status === "searching_a_group");
+	const creating_group = projects.filter(project => project.status === "creating_group");
+
+	return ({
+		finished: finished,
+		in_progress: in_progress,
+		waiting_for_correction: waiting_for_correction,
+		searching_a_group: searching_a_group,
+		creating_group: creating_group,
+		projects: projects,
+	});
+}
+
+function getProject(user) {
 	let project = "Working on nothing";
 	
-	// FIXME: 42 API is bad with filter, and Making less requests is better
-	let projects;
-	if ((projects = (await api_client.get(`/users/${user.id}/projects_users?filter[status]=waiting_for_correction`)).data).length)
+	let filterd_projects = filterProjects(user);
+	if (filterd_projects.waiting_for_correction.length > 0) {
 		project = "Waiting for correction: ";
-	else if ((projects = (await api_client.get(`/users/${user.id}/projects_users?filter[status]=in_progress`)).data).length)
+		project += filterd_projects.waiting_for_correction.map(project => project.project.name).join(", ");
+		return (project);
+	} else if (filterd_projects.in_progress.length > 0) {
 		project = "Working on: ";
-	else if ((projects = (await api_client.get(`/users/${user.id}/projects_users?filter[status]=searching_a_group,creating_group`)).data).length)
+		project += filterd_projects.in_progress.map(project => project.project.name).join(", ");
+		return (project);
+	}
+	else if (filterd_projects.searching_a_group.length > 0 || filterd_projects.creating_group.length > 0) {
 		project = "Looking for a group: ";
-	if (projects.length) {
-		let name = [];
-		for (let i = 0; i < projects.length; i++)
-			if (projects[i].status != "finished") // because 42 api filter is bad
-				name.push(projects[i].project.name);
-		if (name.length)
-		{
-			project += name.join(", ");
-			return (project);
+		project += filterd_projects.searching_a_group.concat(filterd_projects.creating_group).map(project => project.project.name).join(", ");
+		return (project);
+	}
+	else if (filterd_projects.finished.length > 0) {
+		if (filterd_projects.finished[0].project.name.toLowerCase().includes("exam")) {
+			project = "Just passed: ";
+		} else {
+			project = "Just pushed: ";
 		}
+		project += filterd_projects.finished[0].project.name;
+		return project;
 	}
-	try {
-		projects = (await api_client.get(`/users/${user.id}/projects_users?filter[status]=finished`)).data;
-		project = "Just pushed: " + projects[0].project.name;
-	}
-	catch (err) {
-		console.log(err);
+	else if (filterd_projects.projects.length > 0){
+		project = "Just pushed: ";
+		project += filterd_projects.projects[0].project.name;
+		return (project);
 	}
 	return (project);
 }
